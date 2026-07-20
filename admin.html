@@ -2,6 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Robust client-side routing for Cloudflare Pages (Static) and local development fallback
+      (function() {
+        var hostname = window.location.hostname.toLowerCase();
+        var pathname = window.location.pathname;
+        
+        // If accessing admin.html on the main production domain (instead of the admin subdomain), redirect to the admin subdomain
+        if (hostname === 'vision-x.soulverseapps.com' && pathname === '/admin.html') {
+          window.location.replace('https://admin.vision-x.soulverseapps.com' + window.location.search + window.location.hash);
+          return;
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>VisionX AI – Production Admin Control Suite</title>
     <link rel="canonical" href="https://admin.vision-x.soulverseapps.com" />
