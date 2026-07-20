@@ -1,0 +1,7 @@
+# Robots.txt file for VisionX AI
+# Website URL: https://vision-x.soulverseapps.com
+
+User-agent: *
+Allow: /
+
+Sitemap: https://vision-x.soulverseapps.com/sitemap.xml

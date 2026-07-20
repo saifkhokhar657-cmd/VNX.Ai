@@ -1,0 +1,6 @@
+{
+  "name": "VisionX AI",
+  "description": "VisionX AI is a modern, premium cross-platform AI Creative Suite including AI Image Studio, Animation Studio, Video Studio, SVG Studio, File Converter, and an advanced AI Prompt Engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
