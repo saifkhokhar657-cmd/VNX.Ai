@@ -19,12 +19,12 @@ import { BRAND_ASSETS } from "../assets";
 // --- Configuration Keys ---
 // These can be configured via environment variables or the Admin Panel (stored in localStorage)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || localStorage.getItem("VX_FIREBASE_API_KEY") || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || localStorage.getItem("VX_FIREBASE_AUTH_DOMAIN") || "",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || localStorage.getItem("VX_FIREBASE_PROJECT_ID") || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || localStorage.getItem("VX_FIREBASE_STORAGE_BUCKET") || "",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || localStorage.getItem("VX_FIREBASE_MESSAGING_SENDER_ID") || "",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || localStorage.getItem("VX_FIREBASE_APP_ID") || ""
+  apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || localStorage.getItem("VX_FIREBASE_API_KEY") || "",
+  authDomain: (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN || localStorage.getItem("VX_FIREBASE_AUTH_DOMAIN") || "",
+  projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID || localStorage.getItem("VX_FIREBASE_PROJECT_ID") || "",
+  storageBucket: (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET || localStorage.getItem("VX_FIREBASE_STORAGE_BUCKET") || "",
+  messagingSenderId: (import.meta as any).env.VITE_FIREBASE_MESSAGING_SENDER_ID || localStorage.getItem("VX_FIREBASE_MESSAGING_SENDER_ID") || "",
+  appId: (import.meta as any).env.VITE_FIREBASE_APP_ID || localStorage.getItem("VX_FIREBASE_APP_ID") || ""
 };
 
 // Check if we have valid-looking credentials to initialize a live Firebase App
