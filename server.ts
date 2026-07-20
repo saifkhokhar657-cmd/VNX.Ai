@@ -404,18 +404,29 @@ async function generateImageWithCentralRouting(prompt: string, style?: string, a
       if (ai && isGeminiConfigured && isEnabled) {
         try {
           console.log(`[VisionX Image Router] Trying Google Gemini for image generation...`);
-          const model = primaryModel || activeProviderConfig.imageModel || "gemini-3.1-flash-lite-image";
+          let model = primaryModel || activeProviderConfig.imageModel || "gemini-3.1-flash-lite-image";
+          
+          // Upgrade to gemini-3.1-flash-image if non-default aspectRatio or imageSize is requested
+          if (model === "gemini-3.1-flash-lite-image" && ((aspectRatio && aspectRatio !== "1:1") || (imageSize && imageSize !== "1K"))) {
+            console.log(`[VisionX Image Router] Upgrading model from gemini-3.1-flash-lite-image to gemini-3.1-flash-image for custom parameters.`);
+            model = "gemini-3.1-flash-image";
+          }
+
+          const requestConfig: any = {};
+          // Only pass imageConfig if the model is not the basic flash-lite-image model, which rejects it
+          if (model !== "gemini-3.1-flash-lite-image") {
+            requestConfig.imageConfig = {
+              aspectRatio: aspectRatio || "1:1",
+              imageSize: imageSize || "1K"
+            };
+          }
+
           const response = await ai.models.generateContent({
             model: model,
             contents: {
               parts: [{ text: `${prompt}, style: ${style || "cinematic, hyper-detailed, neon accents"}` }],
             },
-            config: {
-              imageConfig: {
-                aspectRatio: aspectRatio || "1:1",
-                imageSize: imageSize || "1K"
-              }
-            }
+            config: requestConfig
           });
 
           let base64Image = "";
