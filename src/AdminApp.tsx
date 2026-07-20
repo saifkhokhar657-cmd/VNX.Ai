@@ -307,35 +307,32 @@ export default function AdminApp() {
     if (isFirebaseConfigured && auth) {
       try {
         const credentials = await signInWithEmailAndPassword(auth, authEmail, authPassword);
-        // Verify user role matches 'admin' in Firestore
-        // For development fallback or instant deployment, we also accept the primary system credentials:
-        if (authEmail === "saifkhokhar657@gmail.com") {
-          const sRes = await fetch("/api/admin/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: authEmail, firebaseUid: credentials.user.uid })
-          });
-          const sData = await sRes.json();
-          if (sData.success && sData.token) {
-            const sessionUser = {
-              ...sData.user,
-              token: sData.token
-            };
-            localStorage.setItem("vx_admin_active_session", JSON.stringify(sessionUser));
-            setAdminUser(sessionUser);
-            setAuthLoading(false);
-            return;
-          } else {
-            throw new Error(sData.error || "Server validation failed.");
-          }
+        // Verify user role matches 'admin' in Firestore / Backend
+        const sRes = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: authEmail, firebaseUid: credentials.user.uid })
+        });
+        const sData = await sRes.json();
+        if (sData.success && sData.token) {
+          const sessionUser = {
+            ...sData.user,
+            token: sData.token
+          };
+          localStorage.setItem("vx_admin_active_session", JSON.stringify(sessionUser));
+          setAdminUser(sessionUser);
+          setAuthLoading(false);
+          return;
+        } else {
+          throw new Error(sData.error || "Server validation failed.");
         }
-        throw new Error("Access Denied: Account not marked as Super Admin.");
       } catch (err: any) {
         console.warn("Firebase sign in blocked, matching standard admin criteria:", err.message);
+        // Let it fall back to standard password login if Firebase auth failed/role checks are still pending
       }
     }
 
-    // 2. Sandbox/Failsafe login: Check primary credentials with server-side authentication
+    // 2. Sandbox/Failsafe login: Check credentials with server-side authentication
     try {
       const sRes = await fetch("/api/admin/login", {
         method: "POST",
@@ -738,8 +735,8 @@ export default function AdminApp() {
 
           <div className="flex items-center gap-2.5">
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-bold text-white">Saif Khokhar</p>
-              <p className="text-[9px] font-mono text-white/40">saifkhokhar657@gmail.com</p>
+              <p className="text-xs font-bold text-white">{adminUser?.name || "Saif Khokhar"}</p>
+              <p className="text-[9px] font-mono text-white/40">{adminUser?.email || "saifkhokhar657@gmail.com"}</p>
             </div>
             <button
               onClick={handleAdminLogout}

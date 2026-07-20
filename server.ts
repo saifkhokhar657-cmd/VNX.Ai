@@ -140,6 +140,52 @@ async function generateOpenAIImage(prompt: string, style?: string, aspectRatio?:
 
     if (!response.ok) {
       const errText = await response.text();
+      // If it is a bad request or mentions response_format, let's retry with standard URL response format
+      if (response.status === 400 || errText.includes("response_format") || errText.includes("unknown_parameter")) {
+        console.warn(`[VisionX OpenAI] DALL-E image request failed with response_format, retrying with default URL format...`);
+        const retryController = new AbortController();
+        const retryTimeoutId = setTimeout(() => retryController.abort(), 35000);
+        try {
+          const retryResponse = await fetch("https://api.openai.com/v1/images/generations", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model,
+              prompt: `${prompt}${style ? `, style: ${style}` : ''}`,
+              n: 1,
+              size
+            }),
+            signal: retryController.signal
+          });
+          clearTimeout(retryTimeoutId);
+
+          if (!retryResponse.ok) {
+            const retryErrText = await retryResponse.text();
+            throw new Error(`OpenAI API error on retry (${retryResponse.status}): ${retryErrText}`);
+          }
+
+          const retryData: any = await retryResponse.json();
+          const imgUrl = retryData.data?.[0]?.url;
+          if (!imgUrl) {
+            throw new Error("No image URL returned from OpenAI DALL-E API.");
+          }
+
+          console.log(`[VisionX OpenAI] Image successfully generated as URL: ${imgUrl}. Fetching and converting to base64...`);
+          const imgFetch = await fetch(imgUrl);
+          if (!imgFetch.ok) {
+            throw new Error(`Failed to download generated image from ${imgUrl}`);
+          }
+          const arrayBuffer = await imgFetch.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString("base64");
+          return `data:image/png;base64,${base64}`;
+        } catch (retryErr: any) {
+          clearTimeout(retryTimeoutId);
+          throw new Error(`OpenAI image retry failed: ${retryErr.message || retryErr}`);
+        }
+      }
       throw new Error(`OpenAI API error (${response.status}): ${errText}`);
     }
 
@@ -1066,30 +1112,66 @@ function adminAuthMiddleware(req: express.Request, res: express.Response, next: 
 // Dedicated Admin Secure Authentication Endpoint
 app.post("/api/admin/login", (req, res) => {
   const { email, password, firebaseUid } = req.body;
-  const isSaifEmail = email === "saifkhokhar657@gmail.com";
-  const isValidDirect = isSaifEmail && password === "admin123";
-  const isValidFirebase = isSaifEmail && firebaseUid;
-
-  if (isValidDirect || isValidFirebase) {
-    const token = "vx_admin_" + Math.random().toString(36).substring(2) + Date.now().toString(36);
-    activeAdminTokens.add(token);
-    activeAdminSessions.set(token, { email, name: "Saif Khokhar (Super Admin)" });
-    console.log(`[VisionX Admin] Admin authenticated successfully: ${email}. Token generated.`);
-    return res.json({
-      success: true,
-      token,
-      user: {
-        id: firebaseUid || "admin-saif",
-        email: "saifkhokhar657@gmail.com",
-        name: "Saif Khokhar (Super Admin)",
-        role: "admin",
-        isLoggedIn: true
-      }
-    });
+  if (!email) {
+    return res.status(400).json({ error: "Access Denied: Email is required." });
   }
 
-  console.warn(`[VisionX Admin] Unauthenticated admin login attempt for email: ${email}`);
-  return res.status(401).json({ error: "Access Denied: Invalid administrator credentials." });
+  // Look up user in database (usersList)
+  const foundUser = usersList.find(u => u.email.toLowerCase() === email.toLowerCase());
+  let isAdmin = false;
+  let userRecord = foundUser;
+
+  if (foundUser) {
+    if (foundUser.role === "admin") {
+      isAdmin = true;
+    }
+  } else if (email.toLowerCase() === "saifkhokhar657@gmail.com") {
+    // Default admin fallback if record is not in database yet
+    isAdmin = true;
+    userRecord = {
+      id: firebaseUid || "admin-saif",
+      email: "saifkhokhar657@gmail.com",
+      name: "Saif Khokhar (Super Admin)",
+      role: "admin",
+      plan: "pro",
+      credits: 450,
+      coins: 2500,
+      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
+      isLoggedIn: true,
+      isGuest: false,
+      profileCompleted: true
+    };
+    usersList.push(userRecord);
+  }
+
+  if (!isAdmin) {
+    console.warn(`[VisionX Admin] Access Denied: User ${email} does not have the admin role.`);
+    return res.status(403).json({ error: "Access Denied: You do not have the administrator role." });
+  }
+
+  // Verify password if direct credentials are being tested (failsafe login)
+  if (!firebaseUid) {
+    if (password !== "admin123") {
+      return res.status(401).json({ error: "Access Denied: Invalid administrator credentials." });
+    }
+  }
+
+  const token = "vx_admin_" + Math.random().toString(36).substring(2) + Date.now().toString(36);
+  activeAdminTokens.add(token);
+  activeAdminSessions.set(token, { email, name: userRecord ? userRecord.name : "Administrator" });
+  console.log(`[VisionX Admin] Admin authenticated successfully: ${email}. Token generated.`);
+
+  return res.json({
+    success: true,
+    token,
+    user: {
+      id: userRecord?.id || firebaseUid || "admin-saif",
+      email: email,
+      name: userRecord?.name || "Administrator",
+      role: "admin",
+      isLoggedIn: true
+    }
+  });
 });
 
 // Get Admin Metrics (Protected)
@@ -1322,16 +1404,8 @@ async function startServer() {
       return true;
     }
 
-    // In local/dev preview environments (not the live production public domain), allow path-based access
-    const isProductionPublicDomain = 
-      hostHeader.includes("vision-x.soulverseapps.com") ||
-      xForwardedHost.includes("vision-x.soulverseapps.com") ||
-      xOriginalHost.includes("vision-x.soulverseapps.com") ||
-      hostname.includes("vision-x.soulverseapps.com") ||
-      headersStr.includes("vision-x.soulverseapps.com");
-
     const isPathAdmin = req.url.startsWith("/admin") || req.url === "/admin" || req.url === "/admin.html";
-    if (isPathAdmin && !isProductionPublicDomain) {
+    if (isPathAdmin) {
       return true;
     }
 
