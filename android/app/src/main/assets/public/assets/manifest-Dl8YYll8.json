@@ -1,0 +1,21 @@
+{
+  "name": "VisionX AI",
+  "short_name": "VisionX",
+  "description": "Premium Cross-Platform AI Creative Suite with real-time vector, image, video and animation sandboxes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#0062FF",
+  "icons": [
+    {
+      "src": "/src/assets/images/visionx_logo_1784303552037.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/src/assets/images/visionx_logo_1784303552037.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

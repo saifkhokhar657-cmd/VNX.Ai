@@ -1,0 +1,6 @@
+{
+	"appId": "com.visionx.app",
+	"appName": "VisionX AI",
+	"webDir": "dist",
+	"bundledWebRuntime": false
+}
