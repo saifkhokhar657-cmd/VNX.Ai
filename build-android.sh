@@ -4,7 +4,7 @@ set -e
 # Env variables
 export ANDROID_HOME=/opt/android-sdk
 export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 export PATH=$JAVA_HOME/bin:$PATH
 
 echo "=== 1. Building React Web App ==="
@@ -65,10 +65,9 @@ if os.path.exists(gradle_path):
             parts[1] = parts[1].replace("release {", "release {\n            signingConfig signingConfigs.release", 1)
             content = "buildTypes {".join(parts)
 
-    # Update versionCode and versionName using robust regex with escaped double quotes
-    import re
-    content = re.sub(r"versionCode \d+", "versionCode 100", content)
-    content = re.sub(r"versionName \"[^\"]+\"", "versionName \"1.0.0\"", content)
+    # Update versionCode and versionName
+    content = content.replace("versionCode 1", "versionCode 100")
+    content = content.replace("versionName \"1.0\"", "versionName \"1.0.0\"")
 
     with open(gradle_path, "w") as f:
         f.write(content)
