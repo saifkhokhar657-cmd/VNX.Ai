@@ -2,9 +2,10 @@
 set -e
 
 # Env variables
-export ANDROID_HOME=/opt/android-sdk
+PROJECT_ROOT="$(pwd)"
+export ANDROID_HOME="${PROJECT_ROOT}/android-sdk"
 export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export JAVA_HOME="${PROJECT_ROOT}/jdk-21"
 export PATH=$JAVA_HOME/bin:$PATH
 
 echo "=== 1. Building React Web App ==="
